@@ -28,7 +28,7 @@ def ingest_all_mhtml(input_dir, output_dir):
                     html_content = part.get_payload() # payload = content
                     decoded_html = quopri.decodestring(html_content)
                     decoded_html_str = decoded_html.decode("utf-8", errors="replace")
-                    output_job_ad = output_dir / f"{job_ad.stem}.html"
+                    output_job_ad = output_dir / f"{job_ad.stem}.html" # for program idempotency
 
                     # write to 1_bronze
                     with open(output_job_ad, "w", encoding="utf-8") as f_out:

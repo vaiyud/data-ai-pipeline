@@ -1,6 +1,5 @@
 # Day 2: Cleans/Validates to data/2_silver/
 
-# from __future__ import annotations
 import json
 from pathlib import Path
 from bs4 import BeautifulSoup
@@ -31,14 +30,14 @@ def process_all_html(input_dir, output_dir):
                 # strip HTML tags and clean text
                 soup = BeautifulSoup(fp, 'html.parser')
 
+                # checks for files that suppossed to be skipped but was processed
                 def get_clean_text(tag, sep=" "):
                     if tag:
                         val = tag.get_text(separator=sep, strip=True)
                         return val if val else None
                     return None
                 
-                # derive source_id, job_title, company, description from html metadata    
-                
+                # derive source_id, job_title, company, description from html metadata
                 # source_id
                 og_url_tag = soup.find("meta", property="og:url")
                 if og_url_tag:
@@ -60,7 +59,6 @@ def process_all_html(input_dir, output_dir):
                 description = get_clean_text(soup.find(attrs={"data-automation": "jobAdDetails"}), sep="\n")
                 if not description: print(f"⚠️ Missing description in: {job_ad.name}")
 
-
                 # validate with Pydantic
                 job_data = JobListing(
                     source_id=source_id,
@@ -69,10 +67,8 @@ def process_all_html(input_dir, output_dir):
                     description=description
                 )
 
-                # print('\nJob Data:...\n', job_data)
-
                 # write to 2_silver
-                processed_job_ad = output_dir / f"{job_ad.stem}.json"
+                processed_job_ad = output_dir / f"{job_ad.stem}.json" # for program idempotency
                 json_content = job_data.model_dump_json(indent=4)
                 with open(processed_job_ad, "w", encoding="utf-8") as fj:
                     fj.write(json_content)
