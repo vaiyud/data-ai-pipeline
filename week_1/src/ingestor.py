@@ -44,7 +44,7 @@ def ingest_all_mhtml(input_dir, output_dir):
                 failed += 1
         
         except Exception as e:
-            print(f"❌ Error processing {job_ad.name}: {e}")
+            print(f"❌ Error ingesting {job_ad.name}: {e}")
             failed += 1
     
     print("\n📊 Bronze Summary:")

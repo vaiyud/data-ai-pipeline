@@ -80,6 +80,7 @@ def process_all_html(input_dir, output_dir):
             skipped += 1
 
         except Exception as e:
+            print(f"❌ Error processing {job_ad.name}: {e}")
             skipped += 1
     
     print("\n📊 Silver Summary:")

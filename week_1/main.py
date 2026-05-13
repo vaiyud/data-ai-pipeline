@@ -14,24 +14,24 @@ DB_NAME = "jobs.db"
 def run_bronze():
     input_dir = SOURCE_DIR
     output_dir = BRONZE_DIR
-    print("🥉 Bronze:...") 
+    print("\n🥉 Bronze:...") 
     ingest_all_mhtml(input_dir, output_dir)
 
 def run_silver():
     input_dir = BRONZE_DIR
     output_dir = SILVER_DIR
-    print("🥈 Silver:...")
+    print("\n🥈 Silver:...")
     process_all_html(input_dir, output_dir)
 
 def run_gold():
     input_dir = SILVER_DIR
     output_dir = GOLD_DIR
-    print("🥇 Gold:...")
+    print("\n🥇 Gold:...")
     load_all_jsons(input_dir, output_dir)
 
 def run_profiler():
     db_path = GOLD_DIR/DB_NAME
-    print("--- 🔍 DATA QUALITY REPORT ---")
+    print("\n--- 🔍 DATA QUALITY REPORT ---")
     run_data_profile(db_path)
     
 def main():
