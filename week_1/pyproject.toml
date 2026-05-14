@@ -1,7 +1,7 @@
 [project]
-name = "job-etl-orchestrator"
+name = "data-ai-pipeline"
 version = "0.1.0"
-description = "Add your description here"
+description = "An orchestrated ETL pipeline for transforming archived job advertisements into structured relational data."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
