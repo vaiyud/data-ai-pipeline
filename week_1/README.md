@@ -122,30 +122,26 @@ Run the orchestrator:
 ## Technical Reflections
 ### Module 1: The Extractor (Medallion & Lakehouses)
 
-Why is it useful to keep the original raw HTML files instead of directly inserting processed data into the database? What problems become easier to debug or recover from?
+*Why is it useful to keep the original raw HTML files instead of directly inserting processed data into the database? What problems become easier to debug or recover from?*
 
-**Answer**:
+- **Answer:** Storing files in their raw format, like `.mhtml` or `.html`, enables us to reprocess the data in case something goes wrong when processing the data from the database in the later phases. It prevents data from disappearing completely from the database by replaying the pipeline. This repopulates it since the source files was kept in the data lake. Especially when the source data are archived web pages, it would not be possible to retrieve them again, as they will no longer be available online. Not only that, storing these raw files can be useful in the future, to expand the database, for instance, when others want to extract more information that was not initially extracted from the source files.
 
-  
 
 ### Module 2: Treatment Plant (ETL vs ELT & Scale)
 
-Why do cloud systems prefer loading raw data first before cleaning it (ELT)? What problems happen when processing files sequentially, and how does distributed processing help?
+*Why do cloud systems prefer loading raw data first before cleaning it (ELT)? What problems happen when processing files sequentially, and how does distributed processing help?*
 
-**Answer**:
-
+- **Answer:** Cloud systems prefer ELT to ETL because the cost of computing is higher than the cost of storage nowadays. It is more sustainable to process files via ELT as we can leverage the power of cloud data warehouses to perform the cleaning. Also, when files are processed sequentially, it can be time-consuming as the files required to be processed can grow over time. Unlike in this project, where sequential processing does not show a significant delay in processing 100 HTML files, a larger number of files will be required to be processed for a business report in industrial practices, and there will be a significant bottleneck. Distributed and parallel processing help reduce the time taken significantly, as we can utilize multiple cores or nodes to perform the tasks in parallel.
   
 
 ### Module 3: The Blueprint & The Vault (Storage & Contracts)
 
-What should happen if an important field like job_title disappears? Why fail early instead of silently inserting nulls into DB? How does `INSERT OR IGNORE` help prevent duplicate records?
+*What should happen if an important field like job_title disappears? Why fail early instead of silently inserting nulls into DB? How does `INSERT OR IGNORE` help prevent duplicate records?*
 
-**Answer**:
-
-  
+- **Answer:** Inserting null values to important fields like the `job_title` does not exactly break dashboards, for instance, but it will lead to incorrect data shown on the dashboard, making it misleading or messy for decision makers. Also, detecting an early fail allows teams to fix the error at the root level before it enters the database, which will be difficult to find and fix, especially on a larger scale. In this project, `INSERT OR IGNORE` was used to prevent duplicate records, so that, when the same process is run several times, the result will remain the same, as SQLite check the incoming `source_id` (the primary key) if it already exists in the table, drops that `INSERT` process, and moves on to the next row `INSERT` process.  
 
 ### Module 4: The QA Inspector & Orchestrator (Orchestration & DAGs)
 
-What happens if `processor.py` crashes halfway? How are automated orchestration tools more reliable than manual retries with Python scripts?
+*What happens if `processor.py` crashes halfway? How are automated orchestration tools more reliable than manual retries with Python scripts?*
 
-**Answer**:
+- **Answer:** When `processor.py` crashes halfway through a larger number of files via `main.py`, some files will be partially written, which might affect the next processes in the pipeline. Therefore, we have to manually figure out where to restart the pipeline. After fixing the issue, we will have to rerun the pipeline from the start. But with automated orchestration tools, it will not be necessary to do so as it will only retry from the interrupted layer in the pipeline. This can be set up using automated tools, which allows solving temporary issues like the database being busy or a network issue without manual intervention at any time of the day. Also, some automated orchestration tools have a searchable UI and send alerts to the teams to help keep track of any issues that occur during the run of the pipeline.
