@@ -4,12 +4,12 @@ import sqlite3
 from pathlib import Path
 
 def run_data_profile(db_path):
-    
+
     # for program idempotency
     if not db_path.exists():
         print(f"❌ Database not found at {db_path}")
         return
-    
+
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
@@ -20,7 +20,7 @@ def run_data_profile(db_path):
         cursor.execute("SELECT COUNT(*) FROM jobs")
         total = cursor.fetchone()[0]
         print(f"📈 Total Records: {total}")
-        
+
         # missing values
         # returns total num of missing values in job_title column
         cursor.execute("SELECT COUNT(*) FROM jobs WHERE job_title IS NULL")
@@ -50,7 +50,7 @@ def run_data_profile(db_path):
         short_desc = cursor.fetchone()
         print(f"⚠️  Shortest Description: {short_desc['d']} chars")
         print(f" ↳ source_id: {short_desc['source_id']} | job_title: {short_desc['job_title']}")
-        
+
         # long_desc: return the longest length of description in chars, and the source_id & job_title of that longest description
         cursor.execute("""
                     SELECT source_id, job_title, LENGTH(description) as d 

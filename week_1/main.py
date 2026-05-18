@@ -14,7 +14,7 @@ DB_NAME = "jobs.db"
 def run_bronze():
     input_dir = SOURCE_DIR
     output_dir = BRONZE_DIR
-    print("\n🥉 Bronze:...") 
+    print("\n🥉 Bronze:...")
     ingest_all_mhtml(input_dir, output_dir)
 
 def run_silver():
@@ -30,13 +30,13 @@ def run_gold():
     load_all_jsons(input_dir, output_dir)
 
 def run_profiler():
-    db_path = GOLD_DIR/DB_NAME
+    db_path = GOLD_DIR / DB_NAME
     print("\n--- 🔍 DATA QUALITY REPORT ---")
     run_data_profile(db_path)
-    
+
 def main():
     # CLI Orchestrator (The Conductor)
-    command_list = ["ingest", "process", "load", "profile","all"]
+    command_list = ["ingest", "process", "load", "profile", "all"]
 
     if len(sys.argv) < 2:
         print(f"Usage: python main.py [{' | '.join(command_list)}]")

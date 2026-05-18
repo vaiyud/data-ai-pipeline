@@ -11,7 +11,7 @@ def load_all_jsons(input_dir, output_dir):
     output_path.mkdir(parents=True, exist_ok=True)
 
     db_file = output_path / "jobs.db"
-    
+
     # create SQLite schema
     connection = sqlite3.connect(db_file)
     cursor = connection.cursor()
@@ -25,7 +25,8 @@ def load_all_jsons(input_dir, output_dir):
                 description TEXT,
                 tech_stack TEXT
             )
-        """)
+        """
+    )
     connection.commit()
 
     inserted, skipped = 0, 0
@@ -35,7 +36,7 @@ def load_all_jsons(input_dir, output_dir):
         print(f"No .json files found in {input_dir}")
         connection.close()
         return
-    
+
     for job_ad in json_files:
         try:
             # read from 2_silver
@@ -56,13 +57,14 @@ def load_all_jsons(input_dir, output_dir):
                     )
                      VALUES (?, ?, ?, ?, ?)
                 """,
-                    (
-                        data["source_id"], 
-                        data["job_title"], 
-                        data["company"], 
-                        data["description"],
-                        None
-                    ))
+                (
+                    data["source_id"],
+                    data["job_title"],
+                    data["company"],
+                    data["description"],
+                    None,
+                ),
+            )
 
             # Check if a row was actually affected (not ignored as a duplicate)
             if cursor.rowcount > 0:
@@ -71,7 +73,7 @@ def load_all_jsons(input_dir, output_dir):
             else:
                 print(f"⏭️ Skipped (duplicate): {job_ad.name}")
                 skipped += 1
-            
+
         except Exception as e:
             print(f"❌ Error loading {job_ad.name}: {e}")
             skipped += 1
