@@ -6,7 +6,7 @@ from pathlib import Path
 
 def load_all_jsons(input_dir, output_dir):
 
-    # for program idempotency
+	# for program idempotency
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
