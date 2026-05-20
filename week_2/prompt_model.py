@@ -18,7 +18,7 @@ def prompt_model(model: str, prompt: str) -> str :
 			]
 		)
 
-		# print("\n--- RESPONSE ---\n")
+		# print("--- RESPONSE ---")
 		# print(response.message.content)
 
 		return response.message.content
