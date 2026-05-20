@@ -23,7 +23,7 @@ def prompt_model(model: str, prompt: str) -> str :
 
 		return response.message.content
 	except Exception as e:
-		print("\n--- RESPONSE ---\n")
+		# print("\n--- RESPONSE ---\n")
 		print("❌ Error: ", e)
 
 

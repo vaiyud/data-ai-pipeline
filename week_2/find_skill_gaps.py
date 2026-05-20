@@ -1,3 +1,4 @@
+import re
 import time
 import sqlite3
 from pathlib import Path
@@ -37,9 +38,16 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
             if "</thought>" in response:
                 response = response.split("</thought>")[-1]
 
-            # # remove markdown and trim spaces & output into a single line
-            response = response.replace("\n", ", ").replace("\r", ", ").replace("```", "")
-            resume_skills = {s.strip().lower() for s in response.split(",") if s.strip()}
+            # skills from resume
+            # split response extracted from resume by comma, new line, tab, or spaces
+            raw_skills = re.split(r"[,\n\r\t]+", response)
+            resume_skills = set()
+            for item in raw_skills:
+                # remove dashes, asterisks, bullet points at the begining of the skill
+                clean_skill = re.sub(r"^[\s\-\*\•]+", "", item).strip().lower()
+                if clean_skill and clean_skill not in ["none/general/non-technical", "not applicable"]:
+                    resume_skills.add(clean_skill)
+            # print("Resume Skills: ", resume_skills)
 
             connection = sqlite3.connect(db_url)
             connection.row_factory = sqlite3.Row
@@ -54,14 +62,16 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
             )
             rows = cursor.fetchall()
 
+            # skills from db
             db_skills = set()
             for row in rows:
-                raw_skills = row["tech_stack"].split(",")
-                for skill in raw_skills:
-                    clean_skill = skill.strip().lower()
-                    if clean_skill and clean_skill != "none/general/non-technical":
-                        db_skills.add(clean_skill)
-            
+                raw_db_skills = row["tech_stack"].split(",")
+                for skill in raw_db_skills:
+                    clean_db_skill = skill.strip().lower()
+                    if clean_db_skill and clean_db_skill not in ["none/general/non-technical", "not applicable"]:
+                        db_skills.add(clean_db_skill)
+            # print("DB Skills: ", db_skills)
+        
             gaps = []
             for skill in db_skills:
                 if skill not in resume_skills:
