@@ -2,13 +2,13 @@ import time
 import sqlite3
 from pathlib import Path
 from pydantic import BaseModel
+from prompt_model import prompt_model
 
 DB_PATH = Path("data/jobs_d1.db")
 INPUT_FILE = Path("data/resume_d3.txt")
 
 class SkillGapResult(BaseModel):
     gaps: list[str]
-    # add more fields when needed...
 
 def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
     
@@ -18,7 +18,28 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
     for attempt_num in range(1, max_retries + 1):
         try:
             with open(input_file_path, "r", encoding="utf-8", errors="ignore") as f:
-                resume = f.read().lower()
+                resume = f.read()
+
+            resume_prompt = (
+                f"Extract a comma-separated list of technical skills, languages, and tools from this resume. "
+                f"Rules:\n"
+                f"1. Output MUST be a single line of flat, comma-separated values.\n"
+                f"2. Do NOT use bullet points, newlines, or markdown blocks.\n"
+                f"3. If no technical skills are found, reply with 'None'.\n\n"
+                f"Resume Content:\n{resume}"
+            )
+
+            response = prompt_model("gemma3:1b", resume_prompt)
+            if not response:
+                raise ValueError("Model returned an empty string.")
+
+            # remove thinking process block if exists
+            if "</thought>" in response:
+                response = response.split("</thought>")[-1]
+
+            # # remove markdown and trim spaces & output into a single line
+            response = response.replace("\n", ", ").replace("\r", ", ").replace("```", "")
+            resume_skills = {s.strip().lower() for s in response.split(",") if s.strip()}
 
             connection = sqlite3.connect(db_url)
             connection.row_factory = sqlite3.Row
@@ -33,17 +54,31 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
             )
             rows = cursor.fetchall()
 
-            # print(f"gaps={}")
-            # return SkillGapResult(gaps=)
+            db_skills = set()
+            for row in rows:
+                raw_skills = row["tech_stack"].split(",")
+                for skill in raw_skills:
+                    clean_skill = skill.strip().lower()
+                    if clean_skill and clean_skill != "none/general/non-technical":
+                        db_skills.add(clean_skill)
+            
+            gaps = []
+            for skill in db_skills:
+                if skill not in resume_skills:
+                    gaps.append(skill)
+
+            sorted_gaps = sorted(gaps)
+            print(f"gaps={sorted_gaps}")
+            return SkillGapResult(gaps=sorted_gaps)
 
         except Exception as e:
-            print(f"❌ Error: {e}")
             print(f"Attempt {attempt_num} failed: {str(e)}")
 
-            if attempt_num <= max_retries:
+            if attempt_num < max_retries:
                 time.sleep(retry_duration)
-                print(f"Retring in {retry_duration}s...")
+                print(f"Retrying in {retry_duration}s...")
             else:
+                print("Max retries reached. Exiting...")
                 return SkillGapResult(gaps=[])
 
 if __name__ == "__main__":
