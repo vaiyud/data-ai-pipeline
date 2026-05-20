@@ -199,11 +199,13 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "ollama" },
+    { name = "pydantic" },
     { name = "ruff" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "ollama", specifier = ">=0.6.2" },
+    { name = "pydantic", specifier = ">=2.13.4" },
     { name = "ruff", specifier = ">=0.15.13" },
 ]
