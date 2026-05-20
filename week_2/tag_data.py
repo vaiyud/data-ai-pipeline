@@ -38,7 +38,7 @@ def tag_data(db_url: str):
             break
         
         processed = True
-        print(f"\n[Batch {batch_num}] ({len(rows)} jobs left)")
+        print(f"\n[Batch {batch_num}] ({len(rows)} jobs)")
 
         for row in rows:
             source_id = row["source_id"]
@@ -64,7 +64,7 @@ def tag_data(db_url: str):
 
                     # clean raw response into suitable tech_stack output format
 
-                    # remove thinking process block
+                    # remove thinking process block if exists
                     if "</thought>" in response:
                         response = response.split("</thought>")[-1]
                         # print("Removed thinking process block:\n", response)
@@ -114,7 +114,7 @@ def tag_data(db_url: str):
                 connection.commit()
                 print(f"Analyzed Job {source_id}: {extracted_tech_stack}")
             else:
-                print(f"[Batch {batch_num}] Job {source_id} skipped after max retried failed")
+                print(f"[Batch {batch_num}] Job {source_id} skipped after max retries failed")
         
         batch_num += 1
                  	

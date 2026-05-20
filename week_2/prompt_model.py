@@ -29,7 +29,7 @@ def prompt_model(model: str, prompt: str) -> str :
 
 if __name__ == "__main__":
 
-	model_list = ["deepseek-r1:1.5b", "phi3", "llama3.1"]
+	model_list = ["gemma3:1b", "deepseek-r1:1.5b", "phi3", "llama3.1"]
 
 	if len(sys.argv) < 3:
 		print("❌ Error: Missing arguments")
