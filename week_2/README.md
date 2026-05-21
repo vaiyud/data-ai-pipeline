@@ -228,7 +228,25 @@ The project's execution loop operates through a coordinated two-stage lifecycleâ
 
 ## Testing
 
+The system architecture was evaluated using a multi-tiered validation approach designed to test data aggregation stability, LLM parsing accuracy, and the strict determinism of the gap analysis logic.
 
+### Test Scenarios
+
+To ensure correctness, the matching engine was tested against three explicit edge-case scenarios. The table below outlines the core input conditions, how the raw pipeline failed initially, and how deterministic logic resolved the issue:
+
+| Test Scenario | Target Input Conditions | Before Validation | After Validation |
+| :--- | :--- | :--- | :--- |
+| <br>Exact Keyword Match | A resume containing structured technical text that matches database fields exactly (e.g., `Python`, `Docker`, `Java`). | Basic tokenization succeeded, but arbitrary model capitalization variances occasionally caused false gap detection. | Strict string lowercasing guarantees exact matching tokens independent of formatting choices. |
+| <br>Complex Phrase & Boundary Handling | A resume listing compound shorthand strings and unified variant formats (e.g., `C/C++`, `MYSQL`, `A/B Testing`). | The small local model completely missed `A/B Testing` embedded in body text. Hardcoded character splitting destroyed `CI/CD` while leaving `C/C++` unresolvable against database requirements like `C++`. | Integrating a programmatic `ALIAS_MAP` translation layer intercepts parsed sets, safeguarding unified blocks (`ci/cd`, `a/b testing`) while expanding compound configurations (`c/c++` into `c`, `c++`) safely before evaluation. |
+| <br>Extraneous Data & Edge Cases | A job description and a resume where the local reasoning model fails to extract skills, resulting in raw `<thought>` blocks, empty strings, or default placeholder outputs. | DeepSeek-R1 (1.5B) reasoning tags (`<thought>...</thought>`) leaked directly into string variables when it struggled to find tech stacks, and the model returned literal string failures when there are valid technical skills to be extracted. | Explicit multi-character regex patterns strip stray markdown indicators, and catch logic-leak thinking boundaries. |
+
+### Ensuring Correctness and Reliability
+
+Because generative AI models are inherently probabilistic, the following backend architectural safeguards were implemented to guarantee repeatable execution:
+
+- Network or local context-window choking is mitigated using a 3-attempt linear retry loop (`max_retries=3`) with a 2-second sleep duration to preserve script execution flow during hardware spikes.
+
+- Multi-run testing revealed that while the `ALIAS_MAP` layer perfectly standardizes tokens once they are captured, the underlying local model's extraction pass remains inherently probabilistic. Because small models can occasionally omit or include a specific keyword across consecutive runs on identical text, minor variances can still propagate into the final set-difference calculation. This underscores that downstream deterministic logic can sanitize variations in formatting, but cannot completely override the baseline extraction volatility of a small context window. 
 
 ## Limitations
 
