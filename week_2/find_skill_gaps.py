@@ -77,9 +77,7 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                 if skill not in resume_skills:
                     gaps.append(skill)
 
-            sorted_gaps = sorted(gaps)
-            print(f"gaps={sorted_gaps}")
-            return SkillGapResult(gaps=sorted_gaps)
+            return SkillGapResult(gaps=sorted(gaps))
 
         except Exception as e:
             print(f"Attempt {attempt_num} failed: {str(e)}")
@@ -98,4 +96,4 @@ if __name__ == "__main__":
     elif not INPUT_FILE.exists():
         print(f"❌ Error: File file not found at {INPUT_FILE}")
     else:
-        find_skill_gaps(INPUT_FILE, DB_PATH)
+        print("gaps=", find_skill_gaps(INPUT_FILE, DB_PATH).gaps)
