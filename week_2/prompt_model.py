@@ -18,12 +18,9 @@ def prompt_model(model: str, prompt: str) -> str :
 			]
 		)
 
-		# print("--- RESPONSE ---")
-		# print(response.message.content)
-
 		return response.message.content
+	
 	except Exception as e:
-		# print("\n--- RESPONSE ---\n")
 		print("❌ Error: ", e)
 
 
@@ -39,4 +36,5 @@ if __name__ == "__main__":
 	chosen_model = sys.argv[1]
 	user_prompt = sys.argv[2]
 
-	prompt_model(chosen_model, user_prompt)
+	print("\n--- RESPONSE ---\n")
+	print(prompt_model(chosen_model, user_prompt))
