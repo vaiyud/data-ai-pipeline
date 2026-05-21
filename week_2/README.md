@@ -146,7 +146,7 @@ To read the resume and the database to identify skill gaps:
 
 ### `find_skill_gaps(input_file_path, db_url)`
 
-**Purpose:** Extracts explicit candidate expertise from a raw text resume using generative AI, aggregates required market tech stacks from the database in flat blocks, and isolates missing requirements using RegEx sanitation and set-difference matching.
+**Purpose:** Extracts explicit candidate expertise from a raw text resume using generative AI, aggregates required market tech stacks from the database, normalizes both sources using an alias mapping translation layer, and isolates missing requirements using RegEx sanitation and set-difference matching.
 
 **Inputs:**
 
@@ -157,7 +157,25 @@ To read the resume and the database to identify skill gaps:
 - Returns a structured Pydantic `SkillGapResult` object encapsulating an array of missing skill strings.
 - Emits a sorted visualization of that data directly to the terminal interface.
 
-**Module Interactions:** Calls `prompt_model` exactly once up-front to construct the candidate's base skill profile.
+**Module Interactions:** 
+
+- Calls `prompt_model` exactly once up-front to construct the candidate's base skill profile.
+
+- Intercepts parsed tokens using an internal `ALIAS_MAP` dictionary function to normalize shorthand variances (such as handling `"C/C++"` expansions and protecting `"CI/CD"` strings) before comparison.
+
+### `normalize_skills(raw_skills_set)`
+
+**Purpose:** Acts as the engine's translation gatekeeper. It takes a raw set of extracted skills and maps individual shorthand names, synonyms, or compound tags into standardized tokens before comparison operations take place.
+
+**Inputs:**
+- `raw_skills_set` (*set*): A collection of raw, lowercased skill strings isolated from either the resume extraction or the database query.
+
+**Outputs:**
+- Returns a standardized, flattened `set` of normalized skill strings. 
+
+**Module Interactions:** 
+- Iterates through the input collection against the internal `ALIAS_MAP` dictionary. 
+- Expands compound entries (e.g. single `c/c++` input into individual `c` and `c++` tokens) and converts known synonyms to their uniform equivalents, while allowing unmapped skills to pass through unchanged.
 
 ## Data/Assumptions
 
@@ -193,9 +211,11 @@ The pipeline relies entirely on local file resources to ensure zero cloud data e
     
 -   All string comparisons are strictly normalized to **lowercase** to ensure deterministic matching regardless of how text capitalization varies between job descriptions and resumes.
 
+-   Extracted keywords are passed through an explicit **translation dictionary**, `ALIAS_MAP` to resolve compound conventions and structural variations. This process expands shorthand sets (e.g. decomposing `c/c++` into distinct `c` and `c++` tokens) while safeguarding unified terminology (e.g. protecting `ci/cd` or `a/b testing` from punctuation-based splits), ensuring data sets match perfectly during comparison.
+
 ### Hardware Simplifications
 
-To accommodate low-resource hardware constraints (e.g. 8GB RAM, Dual-Core systems), database parsing is hard-capped at a `batch_size = 25`**.
+To accommodate low-resource hardware constraints (e.g. 8GB RAM, dual-core systems), database parsing is hard-capped at a `batch_size = 25`**.
 
 ***which can be modified accordingly to the device's hardware that runs this code*
 
@@ -204,7 +224,7 @@ To accommodate low-resource hardware constraints (e.g. 8GB RAM, Dual-Core system
 
 The project's execution loop operates through a coordinated two-stage lifecycleâ€”local job market profile aggregation followed by deterministic candidate skill gap evaluation.
 
-[![](https://mermaid.ink/img/pako:eNp1VWFv2joU_StXqfbUSQElISmQSU-iQGnR-lo13ZfBhEzshIxgR7azwkr_-7txgALdAlJi595z7HNOklcrFpRZoZVKUizgeTDlgMenTzDKxZzkMCByCfdYA5He5BlPoS94kqWlJDoTvC6Pc6LUgCWgNEkZJFmehxcuq3620lIsWXjh-_7uuvGSUb0IvWK9n6BELYiUZBNCAIEdi1zI8CJJki9n-IUUMVNqx-BQL2h1DgyO1-lQ95TERZIdHHMSL2HniJRosoPzqEsc5wCXBO34MPwIlyTMmXvncCtUKt_j-a7vxQe89txNiPd3vBYLkgDxDg40Gg2InnujIbjVdT2vynltVfTswiQyershjMUc7tEqptEx3FEvTSVLjUU_6sbq6E2qukehNBqpfiDqv3A9ufwp5qpJ55-PKq-re9snRqgCylQss6LCUlvoXyLnrJKtWWw-v3f0TUfEOHYgIMSCa7bWWxhM0LVVoWdGmyOOwY5Dl5IrKIhUjIJm8QKWbPMiJK3Yzgm-FUjNlKmbYdziJTLl5Ypv4bquxRUcmWJ0MrH8spvo71O0n-jZ1yYG-_GgdvHPVnh_tMLbW-GF8MRUuWIw_EXy0hgA_8CIFNDjJN-oTB0pMJxIU9zUa127cXOZZJzO1BITNEtJoU5FvjkSuVIX6v4tjP4m8uhEZEleICacZpWIYFhQ5JtzgieWDtcQEZ7p7DeaEjH08fYVT41BhsGXjMcM86bjBQbp7b391mxiPIkqZNx0pUWu4XFDCddZDOPo4T94mP9ksT5a49iQPsqMawWVbOhvgtsBYSq3cDeJhNTVQircSk0Fz0yuMpQUHkpdlHu4D-Z7p-bf2Lfn9g_tO3t8EoDRxwDgS4_jUoRU9VT9fHwVhO4yu8uiMkpZNr5PM2qFWpbMtla4VFINrdeqe2rpBVuxqRXiJcWHdmpN-Rv2FIR_F2K1b5OiTBdWmJBc4ag0wR9kBDP3XoL7ZbIvSq6t0PM7BsMKX621Fbavmk6nc-UFfsvveh0Pb26s0G033at24HR8v9V18B-82dZvw-o23SDodlsdt-u1sCbwbYvRDDd9X38jzKfi7X95p_bi?type=png)](https://mermaid.live/edit#pako:eNp1VWFv2joU_StXqfbUSQElISmQSU-iQGnR-lo13ZfBhEzshIxgR7azwkr_-7txgALdAlJi595z7HNOklcrFpRZoZVKUizgeTDlgMenTzDKxZzkMCByCfdYA5He5BlPoS94kqWlJDoTvC6Pc6LUgCWgNEkZJFmehxcuq3620lIsWXjh-_7uuvGSUb0IvWK9n6BELYiUZBNCAIEdi1zI8CJJki9n-IUUMVNqx-BQL2h1DgyO1-lQ95TERZIdHHMSL2HniJRosoPzqEsc5wCXBO34MPwIlyTMmXvncCtUKt_j-a7vxQe89txNiPd3vBYLkgDxDg40Gg2InnujIbjVdT2vynltVfTswiQyershjMUc7tEqptEx3FEvTSVLjUU_6sbq6E2qukehNBqpfiDqv3A9ufwp5qpJ55-PKq-re9snRqgCylQss6LCUlvoXyLnrJKtWWw-v3f0TUfEOHYgIMSCa7bWWxhM0LVVoWdGmyOOwY5Dl5IrKIhUjIJm8QKWbPMiJK3Yzgm-FUjNlKmbYdziJTLl5Ypv4bquxRUcmWJ0MrH8spvo71O0n-jZ1yYG-_GgdvHPVnh_tMLbW-GF8MRUuWIw_EXy0hgA_8CIFNDjJN-oTB0pMJxIU9zUa127cXOZZJzO1BITNEtJoU5FvjkSuVIX6v4tjP4m8uhEZEleICacZpWIYFhQ5JtzgieWDtcQEZ7p7DeaEjH08fYVT41BhsGXjMcM86bjBQbp7b391mxiPIkqZNx0pUWu4XFDCddZDOPo4T94mP9ksT5a49iQPsqMawWVbOhvgtsBYSq3cDeJhNTVQircSk0Fz0yuMpQUHkpdlHu4D-Z7p-bf2Lfn9g_tO3t8EoDRxwDgS4_jUoRU9VT9fHwVhO4yu8uiMkpZNr5PM2qFWpbMtla4VFINrdeqe2rpBVuxqRXiJcWHdmpN-Rv2FIR_F2K1b5OiTBdWmJBc4ag0wR9kBDP3XoL7ZbIvSq6t0PM7BsMKX621Fbavmk6nc-UFfsvveh0Pb26s0G033at24HR8v9V18B-82dZvw-o23SDodlsdt-u1sCbwbYvRDDd9X38jzKfi7X95p_bi)
+[![](https://mermaid.ink/img/pako:eNp1VWFv2joU_StXqfbU6QWUhKTQTHoSBUqL1rVqui-DCZnYCVkTO7KdFVb639-NAwzoFj5g39x7jn3OtfNqxYIyK7RSScolPA1nHPD58AHGuViQHIZEPsMd5kCk13nGUxgInmRpJYnOBG_S45woNWQJKE1SBkmW5-GZy-qfrbQUzyw8831_O269ZFQvQ69c7QKUqCWRkqxDCCCwY5ELGZ4lSfLpBL-UImZKbRkc6gWd3p7B8Xo96h6TuEiyhWNO4iXsFJESTbZwHnWJ4-zhkqAb76fv4ZKEOQvvFK5ApfIdnu_6XrzH6y7chHh_x-uwIAkQb-9Aq9WC6Kk_HoFbj5u4qhaNVdGTC9PI6O2GMBELuEOrmEbHcEf9NJUsNRZ9bwrrpz-t8x6E0mik-o6o_8HV9PyHWKg2XXw8yLyq320eGaEKKFOxzMoaS21gcI6c81q2drn--LtiYCoixrECASEWXLOV3sBwiq4VpZ4bbQ44hlsOXUmuoCRSMQqaxUt4ZusXIWnNdkrwtURqpkzeHNstfkamvCr4Bq6aXFzBgSlGJ9OWn7aBwa6LdoG-fWXaYDcfNi7-2Qrvj1Z4Oyu8EB6ZqgoGo58kr4wB8A-MSQl9TvK1ytSBAqOpNMltvdKNG9fnScbpXD1jB81TUqpjka8PRK7VhaZ-A-O_iTw-ElmSF4gJp1ktIhgWFPn6lOCRpaMVRIRnOvuFpkQMfbzrP5xzIQuSY6xZoYJ_of_5th_N8eXBMnFmcL7s0hGizq-BkO_mFf9bwwyPkGQ8Zti5Ol5iS779hrgxckympg7lq1XNNTysKeE6i2ES3X-B-8UPFuuD3U4M7YPMuFZQG4CdkqAwIEzmBm6nkZB6vx4EVvDEZJGhOXBf6bLawb1rI--4ja5t3KV9c9pMI_vWnhy10_h9O-EVynE5Qqom1Jy2z4LQ7QnYdrba6m7ZeD9n1Aq1rJhtFbhgUk-t17p-ZuklK9jMCnFI8RKYWTP-hjUl4d-EKHZlUlTp0goTkiucVeYgDTOCPVzso-gHZXIgKq6tMAh8A2KFr9bKClte56IdXHa7eOv6F-5l1_dsa43xwG33uh3fu3Ad1_OcnvtmW78Msdvudnrd4KLjXLod3-n4HdtiNMOd3zWfHfP1efsf5tUQfw?type=png)](https://mermaid.live/edit#pako:eNp1VWFv2joU_StXqfbU6QWUhKTQTHoSBUqL1rVqui-DCZnYCVkTO7KdFVb639-NAwzoFj5g39x7jn3OtfNqxYIyK7RSScolPA1nHPD58AHGuViQHIZEPsMd5kCk13nGUxgInmRpJYnOBG_S45woNWQJKE1SBkmW5-GZy-qfrbQUzyw8831_O269ZFQvQ69c7QKUqCWRkqxDCCCwY5ELGZ4lSfLpBL-UImZKbRkc6gWd3p7B8Xo96h6TuEiyhWNO4iXsFJESTbZwHnWJ4-zhkqAb76fv4ZKEOQvvFK5ApfIdnu_6XrzH6y7chHh_x-uwIAkQb-9Aq9WC6Kk_HoFbj5u4qhaNVdGTC9PI6O2GMBELuEOrmEbHcEf9NJUsNRZ9bwrrpz-t8x6E0mik-o6o_8HV9PyHWKg2XXw8yLyq320eGaEKKFOxzMoaS21gcI6c81q2drn--LtiYCoixrECASEWXLOV3sBwiq4VpZ4bbQ44hlsOXUmuoCRSMQqaxUt4ZusXIWnNdkrwtURqpkzeHNstfkamvCr4Bq6aXFzBgSlGJ9OWn7aBwa6LdoG-fWXaYDcfNi7-2Qrvj1Z4Oyu8EB6ZqgoGo58kr4wB8A-MSQl9TvK1ytSBAqOpNMltvdKNG9fnScbpXD1jB81TUqpjka8PRK7VhaZ-A-O_iTw-ElmSF4gJp1ktIhgWFPn6lOCRpaMVRIRnOvuFpkQMfbzrP5xzIQuSY6xZoYJ_of_5th_N8eXBMnFmcL7s0hGizq-BkO_mFf9bwwyPkGQ8Zti5Ol5iS779hrgxckympg7lq1XNNTysKeE6i2ES3X-B-8UPFuuD3U4M7YPMuFZQG4CdkqAwIEzmBm6nkZB6vx4EVvDEZJGhOXBf6bLawb1rI--4ja5t3KV9c9pMI_vWnhy10_h9O-EVynE5Qqom1Jy2z4LQ7QnYdrba6m7ZeD9n1Aq1rJhtFbhgUk-t17p-ZuklK9jMCnFI8RKYWTP-hjUl4d-EKHZlUlTp0goTkiucVeYgDTOCPVzso-gHZXIgKq6tMAh8A2KFr9bKClte56IdXHa7eOv6F-5l1_dsa43xwG33uh3fu3Ad1_OcnvtmW78Msdvudnrd4KLjXLod3-n4HdtiNMOd3zWfHfP1efsf5tUQfw)
 
 ## Testing
 
@@ -213,9 +233,7 @@ The project's execution loop operates through a coordinated two-stage lifecycleâ
 ## Limitations
 
 ### Model Dependability & Accuracy Trade-offs
-**Model Selection Scale:** The extraction logic was verified exclusively using small-footprint local models (`deepseek-r1:1.5b` and `gemma3:1b`). While highly efficient on constrained consumer hardware, smaller parameter sizes carry a natural trade-off in linguistic reasoning compared to larger cloud models.
-
-**Fuzzy Token Mismatches:** The matching engine relies on exact keyword parity. If the model extracts a skill as `"react"` but the database lists it as `"react.js"`, the deterministic set-difference logic treats them as completely separate entities, leading to false-positive skill gaps.
+The extraction logic was verified exclusively using small-footprint local models (`deepseek-r1:1.5b` and `gemma3:1b`). While highly efficient on constrained consumer hardware, smaller parameter sizes carry a natural trade-off in linguistic reasoning compared to larger cloud models.
 
 ### Missing Features & Constraints
 **No Experience or Seniority Grading:** The system processes technical skills as binary presence flags. It does not differentiate between junior-level exposure and senior-level experience of the skills, nor does it evaluate the depth of a candidate's professional certifications or non-technical skills.
@@ -227,7 +245,7 @@ The project's execution loop operates through a coordinated two-stage lifecycleâ
 ### Design Choices
 The core architectural choice was splitting the pipeline into two distinct scripts: `tag_data.py` (Stage 1) and `find_skill_gaps.py` (Stage 2). 
 
-This separated the probabilistic AI extraction phase from the deterministic evaluation logic. Instead of asking the LLM to both extract and compare the data, which introduces hallucination risks and wastes context window tokens, the LLM is restricted strictly to unstructured-to-structured keyword extraction. The final gap analysis is handed off to local Python set operations and RegEx, which ensures 100% mathematical reliability and zero AI hallucination at the evaluation layer.
+This separated the probabilistic AI extraction phase from the deterministic evaluation logic. Instead of asking the LLM to both extract and compare the data, which introduces hallucination risks and wastes context window tokens, the LLM is restricted strictly to unstructured-to-structured keyword extraction. The final gap analysis is handed off to local Python set operations, RegEx, and alias mapping layer which ensures 100% mathematical reliability and zero AI hallucination at the evaluation layer.
 
 ### Trade-offs
 
@@ -244,6 +262,6 @@ If given more time and scalable development resources, the architecture would be
 
 **Model Context Protocol (MCP) Data Layer:** The direct, raw SQL execution strings inside the application scripts can be moved away in favor of leveraging MCP to call SQL scripts and manage database transactions indirectly. This decouples the core logic from SQLite-specific syntax and improves system security.
 
-**Semantic Skill Graph Integration:** The strict string-matching set difference can be replaced with a semantic lookup table or vector embedding comparison (e.g., mapping `"React"` and `"React.js"` or `"FastAPI"` and `"Python Backend"` to the same node) to completely eliminate false-positive skill gaps.
+**Vector Embedding Graph Integration:** While the hardcoded alias mapping layer successfully handles explicit synonyms (e.g., `React` to `React.js`), the dictionary could be extended into a true vector embedding space or knowledge graph. This would allow the system to implicitly understand conceptual parent-child hierarchies, such as automatically realizing that a candidate with `FastAPI"` exposure implicitly meets a requirement for a generalized `Python Backend` stack.
 
 **Dynamic API Layer:** The static Week 1 `jobs.db` dataset can be transitioned into an automated, live web-scraping queue to keep local job market trends continuously updated in real-time.

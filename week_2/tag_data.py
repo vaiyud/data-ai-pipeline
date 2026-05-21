@@ -4,15 +4,14 @@ from pathlib import Path
 from prompt_model import prompt_model
 
 DB_PATH = Path("data/jobs_d1.db")
-# DB_PATH = Path("data/jobs_d2.db")
-# DB_PATH = Path("week_1/data/3_gold/jobs.db")
+# DB_PATH = Path("data/jobs.db")
 
 def tag_data(db_url: str):
 
     batch_num = 0
-    batch_size = 4
+    batch_size = 25
     max_retries = 3
-    retry_duration = 2
+    retry_duration = 5
 	
     connection = sqlite3.connect(db_url)
     connection.row_factory = sqlite3.Row

@@ -5,11 +5,35 @@ from pathlib import Path
 from pydantic import BaseModel
 from prompt_model import prompt_model
 
-DB_PATH = Path("data/jobs_d1.db")
-INPUT_FILE = Path("data/resume_d3.txt")
+DB_PATH = Path("data/eval/jobs_d3_eval.db")
+INPUT_FILE = Path("data/eval/resume_d3_eval.txt")
 
 class SkillGapResult(BaseModel):
     gaps: list[str]
+
+ALIAS_MAP = {
+    "c/c++": ["c", "c++"],
+    "ci/cd": ["ci/cd"],
+    "cicd": ["ci/cd"],
+    "continuous integration": ["ci/cd"],
+    "a/b testing": ["a/b testing"],
+    "ab testing": ["a/b testing"],
+    "mysql": ["mysql", "sql"],
+    "react.js": ["react"],
+    "reactjs": ["react"],
+    "node.js": ["node.js"],
+    "nodejs": ["node.js"],
+}
+
+def normalize_skills(raw_skills_set: set) -> set:
+    normalized = set()
+    for skill in raw_skills_set:
+        if skill in ALIAS_MAP:
+            for mapped_skill in ALIAS_MAP[skill]:
+                normalized.add(mapped_skill)
+        else:
+            normalized.add(skill)
+    return normalized
 
 def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
     
@@ -33,6 +57,7 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
             response = prompt_model("gemma3:1b", resume_prompt)
             if not response:
                 raise ValueError("Model returned an empty string.")
+            print("Resume Response: ", response)
 
             # remove thinking process block if exists
             if "</thought>" in response:
@@ -72,9 +97,13 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                         db_skills.add(clean_db_skill)
             # print("DB Skills: ", db_skills)
         
+            # normalize both sets using alias map before comparing
+            normalized_resume_skills = normalize_skills(resume_skills)
+            normalized_db_skills = normalize_skills(db_skills)
+
             gaps = []
-            for skill in db_skills:
-                if skill not in resume_skills:
+            for skill in normalized_db_skills:
+                if skill not in normalized_resume_skills:
                     gaps.append(skill)
 
             return SkillGapResult(gaps=sorted(gaps))
