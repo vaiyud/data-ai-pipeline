@@ -8,8 +8,10 @@ from prompt_model import prompt_model
 DB_PATH = Path("data/eval/jobs_d3_eval.db")
 INPUT_FILE = Path("data/eval/resume_d3_eval.txt")
 
+
 class SkillGapResult(BaseModel):
     gaps: list[str]
+
 
 ALIAS_MAP = {
     "c/c++": ["c", "c++"],
@@ -25,6 +27,7 @@ ALIAS_MAP = {
     "nodejs": ["node.js"],
 }
 
+
 def normalize_skills(raw_skills_set: set) -> set:
     normalized = set()
     for skill in raw_skills_set:
@@ -35,8 +38,9 @@ def normalize_skills(raw_skills_set: set) -> set:
             normalized.add(skill)
     return normalized
 
+
 def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
-    
+
     max_retries = 3
     retry_duration = 2
 
@@ -70,7 +74,10 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
             for item in raw_skills:
                 # remove dashes, asterisks, bullet points at the begining of the skill
                 clean_skill = re.sub(r"^[\s\-\*\•]+", "", item).strip().lower()
-                if clean_skill and clean_skill not in ["none/general/non-technical", "not applicable"]:
+                if clean_skill and clean_skill not in [
+                    "none/general/non-technical",
+                    "not applicable",
+                ]:
                     resume_skills.add(clean_skill)
             # print("Resume Skills: ", resume_skills)
 
@@ -93,10 +100,13 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                 raw_db_skills = row["tech_stack"].split(",")
                 for skill in raw_db_skills:
                     clean_db_skill = skill.strip().lower()
-                    if clean_db_skill and clean_db_skill not in ["none/general/non-technical", "not applicable"]:
+                    if clean_db_skill and clean_db_skill not in [
+                        "none/general/non-technical",
+                        "not applicable",
+                    ]:
                         db_skills.add(clean_db_skill)
             # print("DB Skills: ", db_skills)
-        
+
             # normalize both sets using alias map before comparing
             normalized_resume_skills = normalize_skills(resume_skills)
             normalized_db_skills = normalize_skills(db_skills)
@@ -118,8 +128,8 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                 print("Max retries reached. Exiting...")
                 return SkillGapResult(gaps=[])
 
+
 if __name__ == "__main__":
-     
     if not DB_PATH.exists():
         print(f"❌ Error: Database file not found at {DB_PATH}")
     elif not INPUT_FILE.exists():
