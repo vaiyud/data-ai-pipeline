@@ -1,7 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World from Frontend!"}
+templates = Jinja2Templates(directory="src/templates")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="chat_page.html",
+        context={"message": "hello world from frontend!"},
+    )
