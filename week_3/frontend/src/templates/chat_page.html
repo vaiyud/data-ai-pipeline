@@ -4,6 +4,10 @@
     <title>Chat Page</title>
 </head>
 <body>
-    <h3>{{ message }}</h3>
+    {% if message == "hello from frontend!" %}
+        <h3>Welcome to the frontend of the chat page!</h3>
+    {% else %}
+        <h3>{{ message }}</h3>
+    {% endif %}
 </body>
 </html>

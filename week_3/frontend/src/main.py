@@ -9,8 +9,9 @@ templates = Jinja2Templates(directory="src/templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
+    message = "hello from frontend!"
     return templates.TemplateResponse(
         request=request,
         name="chat_page.html",
-        context={"message": "hello world from frontend!"},
+        context={"message": message},
     )
