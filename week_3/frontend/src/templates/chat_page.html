@@ -1,13 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Chat Page</title>
-</head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resume Helper Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <!-- <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></head>
 <body>
-    {% if message == "hello from frontend!" %}
-        <h3>Welcome to the frontend of the chat page!</h3>
-    {% else %}
-        <h3>{{ message }}</h3>
-    {% endif %}
+    <!-- chat page -->
+    <div class="border border-3 border-info w-100 px-3 py-2">CHAT PAGE
+
+        <!-- scrollable chat history -->
+        <div class="border border-3 border-info container mt-4" style="max-width: 700px;">CHAT HISTORY
+            <div class="card mb-3">
+                <div class="card-body bg-light overflow-y-auto p-3" id="chat-scroll-box" style="height: 400px;">
+                    <div class="border border-3 border-info d-flex flex-column align-items-start mb-3">
+                        <div class="text-dark rounded shadow-sm px-3 py-2 mw-75">
+                            Welcome to the resume helper chatbot! Type a message below to start.
+                        </div>
+                        <small class="text-muted mt-1 ms-2">Gemma 3 • Just now</small>
+                    </div>
+                    <div class="border border-3 border-info d-flex flex-column flex-column align-items-end mb-3">
+                        <div class="bg-info text-dark rounded shadow-sm px-3 py-2 mw-75">
+                            Hi!
+                        </div>
+                        <small class="text-muted mt-1 me-2">You • Just now</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- user input form -->
+        <form class="border border-3 border-info container mt-4" style="max-width: 700px;">USER INPUT
+            <div class="input-group">
+                <label class="btn btn-secondary d-flex align-items-center" for="resume-upload">
+                    <i class="fa fa-upload"></i>
+                    <input type="file" id="resume-upload" class="d-none">
+                </label>
+                <input type="text" class="form-control" placeholder="Type your message here">
+                <button type="submit" class="btn btn-info d-flex align-items-center px-4">Send</button>
+            </div>
+        </form>
+
+    </div>
+
+    <h3 class="d-none">{{ message }}</h3>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
