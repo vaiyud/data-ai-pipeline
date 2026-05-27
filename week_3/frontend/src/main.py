@@ -8,17 +8,19 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-parent_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
-load_dotenv(dotenv_path=parent_env_path)
+BACKEND_URL = os.getenv("BACKEND_URL")
+if not BACKEND_URL:
+    parent_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    load_dotenv(dotenv_path=parent_env_path)
+    BACKEND_URL = os.getenv("BACKEND_URL")
+
+if not BACKEND_URL:
+    raise RuntimeError("❌ 'BACKEND_URL' environment variable is missing.")
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 templates = Jinja2Templates(directory="src/templates")
-
-BACKEND_URL = os.getenv("BACKEND_URL")
-if not BACKEND_URL:
-    raise RuntimeError("❌ 'BACKEND_URL' environment variable is missing from the .env file.")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
