@@ -3,9 +3,15 @@ import sys
 from ollama import Client as OllamaClient, ChatResponse
 from google import genai
 from google.genai import types
+from dotenv import load_dotenv
+from pathlib import Path
 
 
 def prompt_model(model: str, prompt: str) -> str:
+
+    parent_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    load_dotenv(dotenv_path=parent_env_path)
+    
     try:
         #
         if model.lower().startswith("gemini"):
@@ -21,7 +27,7 @@ def prompt_model(model: str, prompt: str) -> str:
             )
             return response.text.strip()
         else:
-            ollama_client = OllamaClient(host="http://127.0.0.1:11434")
+            ollama_client = OllamaClient(host=os.getenv("OLLAMA_HOST"))
             # print(f"🛜 Sending request to {model} on port 11434...")
 
             response: ChatResponse = ollama_client.chat(

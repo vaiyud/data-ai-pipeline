@@ -8,13 +8,15 @@ from fastapi.responses import JSONResponse
 
 from week_2.find_skill_gaps import find_skill_gaps, SkillGapResult
 
-parent_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
-load_dotenv(dotenv_path=parent_env_path)
+env_db_path = os.getenv("DB_PATH")
+if not env_db_path:
+    parent_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    load_dotenv(dotenv_path=parent_env_path)
+    env_db_path = os.getenv("DB_PATH")
+
+DB_PATH = Path(env_db_path)
 
 app = FastAPI()
-
-env_db_path = os.getenv("DB_PATH")
-DB_PATH = Path(env_db_path)
 
 @app.post("/chat")
 async def chat(
