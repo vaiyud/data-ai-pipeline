@@ -16,8 +16,8 @@ RUN uv venv
 RUN uv sync --frozen
 
 # the port the app runs on
-EXPOSE 8001
+EXPOSE 8000
 
 # commands to run the application
 ENTRYPOINT ["uv", "run", "uvicorn"]
-CMD ["--app-dir", "src", "--host", "0.0.0.0", "main:app", "--port", "8001"] 
+CMD ["--app-dir", "src", "--host", "0.0.0.0", "app:app", "--port", "8000"]
