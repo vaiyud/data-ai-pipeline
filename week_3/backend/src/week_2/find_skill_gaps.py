@@ -5,8 +5,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from week_2.prompt_model import prompt_model
 
-DB_PATH = Path("data/eval/jobs_d3_eval.db")
-INPUT_FILE = Path("data/eval/resume_d3_eval.txt")
+DB_PATH = Path("data/jobs_d3_eval.db")
+INPUT_FILE = Path("data/resume_d3_eval.txt")
 
 
 class SkillGapResult(BaseModel):
@@ -58,7 +58,7 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                 f"Resume Content:\n{resume}"
             )
 
-            response = prompt_model("gemma3:1b", resume_prompt)
+            response = prompt_model("gemini-2.5-flash", resume_prompt)
             if not response:
                 raise ValueError("Model returned an empty string.")
             # print("Resume Response: ", response)
