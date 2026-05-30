@@ -1,7 +1,9 @@
 import os
+import io
 import httpx
 from pathlib import Path
 from dotenv import load_dotenv
+from pypdf import PdfReader
 
 from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -43,17 +45,52 @@ async def handle_ui_submission(
 
     # Read binary bytes from the frontend multi-part context stream
     file_bytes = await chat_file.read()
+    extracted_text = ""
+
+    # if the file uploaded is PDF, convert to text
+    if (
+        chat_file.filename.lower().endswith(".pdf")
+        or chat_file.content_type == "application/pdf"
+    ):
+        try:
+            pdf_stream = io.BytesIO(file_bytes)
+            reader = PdfReader(pdf_stream)
+
+            text_pages = []
+            for page in reader.pages:
+                text = page.extract_text()
+                if text:
+                    text_pages.append(text)
+
+            extracted_text = "\n".join(text_pages)
+
+            if not extracted_text.strip():
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": "Could not extract text from PDF. Ensure it is not an image-only scanned file."
+                    },
+                )
+        except Exception as e:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": f"Failed to parse PDF file structural layers: {str(e)}"
+                },
+            )
+    else:
+        try:
+            extracted_text = file_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            extracted_text = file_bytes.decode("latin-1")
 
     # Bundle data fields explicitly for network serialization forwarding
-    files = {"chat_file": (chat_file.filename, file_bytes, chat_file.content_type)}
-    data = {"user_message": user_message}
+    data = {"user_message": user_message, "resume_text": extracted_text}
 
     async with httpx.AsyncClient() as client:
         try:
             # Relay request over to the standalone Python backend instance
-            response = await client.post(
-                BACKEND_URL, files=files, data=data, timeout=None
-            )
+            response = await client.post(BACKEND_URL, data=data, timeout=None)
 
             # Forward backend's SkillGapResult response dictionary right back to your JS agent
             return JSONResponse(

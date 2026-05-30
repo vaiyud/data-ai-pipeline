@@ -1,9 +1,8 @@
 import os
-import shutil
 from pathlib import Path
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import JSONResponse
 
 from week_2.find_skill_gaps import find_skill_gaps, SkillGapResult
@@ -20,21 +19,26 @@ app = FastAPI()
 
 
 @app.post("/chat")
-async def chat(user_message: str = Form(""), chat_file: UploadFile = File(...)):
-    if not chat_file or not chat_file.filename:
-        raise HTTPException(status_code=400, detail="File cannot be empty!")
+async def chat(user_message: str = Form(""), resume_text: str = Form("")):
+
+    if not resume_text or not resume_text.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Resume content text cannot  empty! Please ensure the frontend is extracting text properly.",
+        )
 
     temp_dir = Path("temp_uploads")
     temp_dir.mkdir(exist_ok=True)
-    temp_file_path = temp_dir / chat_file.filename
+    temp_file_path = temp_dir / "extracted_resume.txt"
 
     try:
-        with open(temp_file_path, "wb") as buffer:
-            shutil.copyfileobj(chat_file.file, buffer)
+        with open(temp_file_path, "w", encoding="utf-8") as f:
+            f.write(resume_text)
 
         result: SkillGapResult = find_skill_gaps(str(temp_file_path), DB_PATH)
 
         return JSONResponse(content={"gaps": result.gaps})
+
     except Exception as e:
         return JSONResponse(
             status_code=500,

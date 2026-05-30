@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.136.1",
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
+    "pypdf>=6.12.2",
     "python-dotenv>=1.2.2",
     "python-multipart>=0.0.29",
     "ruff==0.15.*",
