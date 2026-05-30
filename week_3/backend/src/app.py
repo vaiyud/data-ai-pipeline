@@ -18,11 +18,9 @@ DB_PATH = Path(env_db_path)
 
 app = FastAPI()
 
+
 @app.post("/chat")
-async def chat(
-    user_message: str = Form(""),
-    chat_file: UploadFile = File(...)
-):
+async def chat(user_message: str = Form(""), chat_file: UploadFile = File(...)):
     if not chat_file or not chat_file.filename:
         raise HTTPException(status_code=400, detail="File cannot be empty!")
 
@@ -33,13 +31,17 @@ async def chat(
     try:
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(chat_file.file, buffer)
-        
+
         result: SkillGapResult = find_skill_gaps(str(temp_file_path), DB_PATH)
 
         return JSONResponse(content={"gaps": result.gaps})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": f"Internal automation script processing failure: {str(e)}"})
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": f"Internal automation script processing failure: {str(e)}"
+            },
+        )
     finally:
         if temp_file_path.exists():
             os.remove(temp_file_path)
-    

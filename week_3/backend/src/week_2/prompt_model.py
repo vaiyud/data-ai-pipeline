@@ -11,7 +11,7 @@ def prompt_model(model: str, prompt: str) -> str:
 
     parent_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
     load_dotenv(dotenv_path=parent_env_path)
-    
+
     try:
         #
         if model.lower().startswith("gemini"):
