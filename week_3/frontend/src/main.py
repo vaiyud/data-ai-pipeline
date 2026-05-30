@@ -94,7 +94,11 @@ async def handle_ui_submission(
             extracted_text = file_bytes.decode("latin-1")
 
     # Bundle data fields explicitly for network serialization forwarding
-    data = {"user_message": user_message, "resume_text": extracted_text, "model_used": MODEL_NAME}
+    data = {
+        "user_message": user_message,
+        "resume_text": extracted_text,
+        "model_used": MODEL_NAME,
+    }
 
     async with httpx.AsyncClient() as client:
         try:

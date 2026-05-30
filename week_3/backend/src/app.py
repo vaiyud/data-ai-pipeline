@@ -29,7 +29,11 @@ app = FastAPI()
 
 
 @app.post("/chat")
-async def chat(user_message: str = Form(""), resume_text: str = Form(""), model_used: str = Form("")):
+async def chat(
+    user_message: str = Form(""),
+    resume_text: str = Form(""),
+    model_used: str = Form(""),
+):
 
     if not resume_text or not resume_text.strip():
         raise HTTPException(

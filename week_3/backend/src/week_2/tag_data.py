@@ -6,7 +6,8 @@ from week_2.prompt_model import prompt_model
 from week_2.utils import calculate_model_configs
 
 DB_PATH = Path("data/jobs_d1.db")
-MODEL_NAME=os.getenv("DEFAULT_MODEL")
+MODEL_NAME = os.getenv("DEFAULT_MODEL")
+
 
 def tag_data(db_url: str, model_name: str):
 

@@ -11,6 +11,7 @@ DB_PATH = Path("data/jobs_d3_eval.db")
 INPUT_FILE = Path("data/resume_d3_eval.txt")
 MODEL_NAME = os.getenv("DEFAULT_MODEL")
 
+
 class SkillGapResult(BaseModel):
     gaps: list[str]
 
@@ -132,7 +133,7 @@ def find_skill_gaps(
                 return SkillGapResult(gaps=[])
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     if not DB_PATH.exists():
         print(f"❌ Error: Database file not found at {DB_PATH}")
     elif not INPUT_FILE.exists():
