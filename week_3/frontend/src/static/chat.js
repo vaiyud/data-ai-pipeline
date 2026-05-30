@@ -89,7 +89,7 @@ chatForm.addEventListener('submit', function(event) {
     // trigger skill gap analysis pipeline
     if (hasFile) {
         // show temporary typing/processing indicator
-        appendSystemBubble('<em>Analyzing file and calculating skill gaps...</em>');
+        appendSystemBubble('<em>Analyzing file and calculating skill gaps...</em>', "Bot");
         
         fetch("/submit-chat", {
             method: "POST",
@@ -100,6 +100,7 @@ chatForm.addEventListener('submit', function(event) {
             return response.json();
         })
         .then(data => {
+            const modelName = data.model_used
             // data matches backend's response model: { "gaps": ["skill1", "skill2", ...] }
             if (data.gaps && data.gaps.length > 0) {
                 let responseHTML = "<p class='mb-2 fw-semibold text-danger'>Identified Skill Gaps:</p><ul class='ps-3 mb-0'>";
@@ -108,18 +109,18 @@ chatForm.addEventListener('submit', function(event) {
                 });
                 responseHTML += "</ul>";
                 
-                appendSystemBubble(responseHTML);
+                appendSystemBubble(responseHTML, modelName);
             } else {
-                appendSystemBubble("✨ Analysis complete! No missing skill gaps were found matching your profile data.");
+                appendSystemBubble("✅ Analysis complete! No missing skill gaps were found matching your profile data.", modelName);
             }
         })
         .catch(error => {
             console.error("Pipeline error:", error);
-            appendSystemBubble("❌ Failed to process skill gap analysis. Please make sure the backend server is running.");
+            appendSystemBubble("❌ Failed to process skill gap analysis. Please make sure the backend server is running.", "Bot");
         });
     } else if (messageText) {
         // if no document was provided
-        appendSystemBubble("Please upload a resume file using the attachment button to calculate matching skill gaps.");
+        appendSystemBubble("Please upload a resume file using the attachment button to calculate matching skill gaps.", "Bot");
     }
 });
 
@@ -131,17 +132,18 @@ function escapeHTML(str) {
 }
 
 // helper function to append left-aligned system responses to the chat box
-function appendSystemBubble(htmlContent) {
+function appendSystemBubble(htmlContent, modelName) {
     const systemWrapper = document.createElement('div');
     systemWrapper.className = 'd-flex flex-column align-items-start mb-3';
     
+    // const currentModel = 
     const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     systemWrapper.innerHTML = `
         <div class="bg-white text-dark rounded shadow-sm px-3 py-2 mw-75">
             ${htmlContent}
         </div>
-        <small class="text-muted mt-1 ms-1">System • ${currentTime}</small>
+        <small class="text-muted mt-1 ms-1">${modelName} • ${currentTime}</small>
     `;
     
     scrollBox.appendChild(systemWrapper);

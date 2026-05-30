@@ -29,12 +29,12 @@ app = FastAPI()
 
 
 @app.post("/chat")
-async def chat(user_message: str = Form(""), resume_text: str = Form("")):
+async def chat(user_message: str = Form(""), resume_text: str = Form(""), model_used: str = Form("")):
 
     if not resume_text or not resume_text.strip():
         raise HTTPException(
             status_code=400,
-            detail="Resume content text cannot  empty! Please ensure the frontend is extracting text properly.",
+            detail="Resume content text cannot empty! Please ensure the frontend is extracting text properly.",
         )
 
     temp_dir = Path("temp_uploads")
@@ -46,10 +46,10 @@ async def chat(user_message: str = Form(""), resume_text: str = Form("")):
             f.write(resume_text)
 
         result: SkillGapResult = find_skill_gaps(
-            str(temp_file_path), DB_PATH, MODEL_NAME
+            str(temp_file_path), DB_PATH, model_name=model_used
         )
 
-        return JSONResponse(content={"gaps": result.gaps})
+        return JSONResponse(content={"gaps": result.gaps, "model_used": model_used})
 
     except Exception as e:
         return JSONResponse(
