@@ -15,6 +15,8 @@ if not env_db_path:
 
 DB_PATH = Path(env_db_path)
 
+MODEL_NAME = os.getenv("DEFAULT_MODEL")
+
 app = FastAPI()
 
 
@@ -35,7 +37,9 @@ async def chat(user_message: str = Form(""), resume_text: str = Form("")):
         with open(temp_file_path, "w", encoding="utf-8") as f:
             f.write(resume_text)
 
-        result: SkillGapResult = find_skill_gaps(str(temp_file_path), DB_PATH)
+        result: SkillGapResult = find_skill_gaps(
+            str(temp_file_path), DB_PATH, model_name=MODEL_NAME
+        )
 
         return JSONResponse(content={"gaps": result.gaps})
 
