@@ -19,6 +19,15 @@ if not BACKEND_URL:
 if not BACKEND_URL:
     raise RuntimeError("❌ 'BACKEND_URL' environment variable is missing.")
 
+MODEL_NAME = os.getenv("DEFAULT_MODEL")
+if not MODEL_NAME:
+    parent_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    load_dotenv(dotenv_path=parent_env_path)
+    MODEL_NAME = os.getenv("DEFAULT_MODEL")
+
+if not MODEL_NAME:
+    raise RuntimeError("❌ 'MODEL_NAME' environment variable is missing.")
+
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
@@ -85,7 +94,7 @@ async def handle_ui_submission(
             extracted_text = file_bytes.decode("latin-1")
 
     # Bundle data fields explicitly for network serialization forwarding
-    data = {"user_message": user_message, "resume_text": extracted_text}
+    data = {"user_message": user_message, "resume_text": extracted_text, "model_used": MODEL_NAME}
 
     async with httpx.AsyncClient() as client:
         try:

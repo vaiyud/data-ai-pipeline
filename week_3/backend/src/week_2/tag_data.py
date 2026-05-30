@@ -1,3 +1,4 @@
+import os
 import time
 import sqlite3
 from pathlib import Path
@@ -5,7 +6,7 @@ from week_2.prompt_model import prompt_model
 from week_2.utils import calculate_model_configs
 
 DB_PATH = Path("data/jobs_d1.db")
-
+MODEL_NAME=os.getenv("DEFAULT_MODEL")
 
 def tag_data(db_url: str, model_name: str):
 
@@ -149,9 +150,7 @@ def tag_data(db_url: str, model_name: str):
 
 
 if __name__ == "__main__":
-    import os
-
     if not DB_PATH.exists():
         print(f"❌ Error: Database file not found at {DB_PATH}")
     else:
-        tag_data(DB_PATH, MODEL_NAME=os.getenv("DEFAULT_MODEL"))
+        tag_data(DB_PATH, MODEL_NAME)
