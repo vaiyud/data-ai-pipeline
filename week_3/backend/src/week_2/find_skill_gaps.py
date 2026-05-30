@@ -132,9 +132,11 @@ def find_skill_gaps(
 
 
 if __name__ == "__main__":
+    import os
+    
     if not DB_PATH.exists():
         print(f"❌ Error: Database file not found at {DB_PATH}")
     elif not INPUT_FILE.exists():
         print(f"❌ Error: File file not found at {INPUT_FILE}")
     else:
-        print("gaps=", find_skill_gaps(INPUT_FILE, DB_PATH).gaps)
+        print("gaps=", find_skill_gaps(INPUT_FILE, DB_PATH, MODEL_NAME=os.getenv("DEFAULT_MODEL")).gaps)

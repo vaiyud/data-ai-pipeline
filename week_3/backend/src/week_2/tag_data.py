@@ -142,11 +142,16 @@ def tag_data(db_url: str, model_name: str):
 
         batch_num += 1
 
+        if rows:
+            time.sleep(retry_duration)
+
     connection.close()
 
 
 if __name__ == "__main__":
+    import os
+
     if not DB_PATH.exists():
         print(f"❌ Error: Database file not found at {DB_PATH}")
     else:
-        tag_data(DB_PATH)
+        tag_data(DB_PATH, MODEL_NAME=os.getenv("DEFAULT_MODEL"))
