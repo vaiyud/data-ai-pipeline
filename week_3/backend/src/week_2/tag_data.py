@@ -1,17 +1,28 @@
 import time
 import sqlite3
 from pathlib import Path
-from prompt_model import prompt_model
+from week_2.prompt_model import prompt_model
+from week_2.utils import calculate_model_configs
 
 DB_PATH = Path("data/jobs_d1.db")
 
 
-def tag_data(db_url: str):
+def tag_data(db_url: str, model_name: str):
 
     batch_num = 0
-    batch_size = 5
-    max_retries = 3
-    retry_duration = 5
+
+    max_retries, retry_duration = calculate_model_configs(model_name)
+    print(
+        f"Running with {model_name} (Retries: {max_retries}, Delay: {retry_duration}s)"
+    )
+
+    # determine batch_size from calculated max_retries and retry_duration
+    if retry_duration >= 12:
+        batch_size = 2  # models with 5 rpm
+    elif retry_duration >= 6:
+        batch_size = 5  # models with 10 rpm
+    else:
+        batch_size = 10  # models with no rpm (ollama)
 
     connection = sqlite3.connect(db_url)
     connection.row_factory = sqlite3.Row
@@ -59,7 +70,7 @@ def tag_data(db_url: str):
 
             while attempt_num <= max_retries and not success:
                 try:
-                    response = prompt_model("gemma3:1b", ts_prompt)
+                    response = prompt_model(model_name, ts_prompt)
 
                     # clean raw response into suitable tech_stack output format
 

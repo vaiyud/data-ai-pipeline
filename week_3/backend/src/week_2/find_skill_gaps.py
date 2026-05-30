@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 from pydantic import BaseModel
 from week_2.prompt_model import prompt_model
+from week_2.utils import calculate_model_configs
 
 DB_PATH = Path("data/jobs_d3_eval.db")
 INPUT_FILE = Path("data/resume_d3_eval.txt")
@@ -39,10 +40,14 @@ def normalize_skills(raw_skills_set: set) -> set:
     return normalized
 
 
-def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
+def find_skill_gaps(
+    input_file_path: str, db_url: str, model_name: str
+) -> SkillGapResult:
 
-    max_retries = 3
-    retry_duration = 2
+    max_retries, retry_duration = calculate_model_configs(model_name)
+    print(
+        f"Running with {model_name} (Retries: {max_retries}, Delay: {retry_duration}s)"
+    )
 
     for attempt_num in range(1, max_retries + 1):
         try:
@@ -58,10 +63,9 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                 f"Resume Content:\n{resume}"
             )
 
-            response = prompt_model("gemini-2.5-flash", resume_prompt)
+            response = prompt_model(model_name, resume_prompt)
             if not response:
                 raise ValueError("Model returned an empty string.")
-            # print("Resume Response: ", response)
 
             # remove thinking process block if exists
             if "</thought>" in response:
@@ -79,7 +83,6 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                     "not applicable",
                 ]:
                     resume_skills.add(clean_skill)
-            # print("Resume Skills: ", resume_skills)
 
             connection = sqlite3.connect(db_url)
             connection.row_factory = sqlite3.Row
@@ -105,7 +108,6 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
                         "not applicable",
                     ]:
                         db_skills.add(clean_db_skill)
-            # print("DB Skills: ", db_skills)
 
             # normalize both sets using alias map before comparing
             normalized_resume_skills = normalize_skills(resume_skills)
