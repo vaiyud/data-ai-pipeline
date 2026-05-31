@@ -14,17 +14,13 @@
         <div class="container mt-4" style="max-width: 700px;">RESUME HELPER CHATBOT
             <div class="card mb-3">
                 <div id="chat-scroll-box" class="card-body bg-light overflow-y-auto p-3" style="height: 400px;">
-                    <div class="d-flex flex-column align-items-start mb-3">
-                        <div class="bg-white text-dark rounded shadow-sm px-3 py-2 mw-75">
-                            Welcome to the resume helper chatbot! Type a message below to start.
-                        </div>
-                        <small class="text-muted mt-1 ms-2">Gemma 3 • Just now</small>
-                    </div>
-                    <div class="d-flex flex-column align-items-end mb-3">
-                        <div class="bg-info text-dark rounded shadow-sm px-3 py-2 mw-75" id="user-output">
-                            Hi!
-                        </div>
-                        <small class="text-muted mt-1 me-2">You • Just now</small>
+                    <div id="welcome-overlay" class="position-absolute top-50 start-50 translate-middle w-75 text-center text-secondary p-3">
+                        <div class="mb-2"><i class="fa fa-comments-o fa-3x text-muted"></i></div>
+                        <h5 class="text-dark fw-semibold">Welcome to the Resume Helper Chatbot!</h5>
+                        <p class="small mb-0">
+                            Type a message below to start your session. You can ask career questions, 
+                            type <strong>"summarize my resume"</strong>, or <strong>"find my skill gaps"</strong> with an attached file!
+                        </p>
                     </div>
                 </div>
             </div>

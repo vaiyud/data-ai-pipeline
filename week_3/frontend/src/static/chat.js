@@ -35,6 +35,12 @@ chatForm.addEventListener('submit', function(event) {
     // prevent adding empty spaces/files to the history
     if (!messageText && !hasFile) return;
 
+    // find and drop the centralized introductory panel placeholder if it exists
+    const welcomeOverlay = document.getElementById('welcome-overlay');
+    if (welcomeOverlay) {
+        welcomeOverlay.remove();
+    }
+
     // create the wrapper div with right-aligned flexbox layout (user)
     const messageWrapper = document.createElement('div');
     messageWrapper.className = 'd-flex flex-column align-items-end mb-3';
@@ -93,7 +99,6 @@ chatForm.addEventListener('submit', function(event) {
         
     appendSystemBubble(loadingText, "Bot");
 
-    // Grab the placeholder bubble we just generated to update it live later
     const systemBubbles = scrollBox.querySelectorAll('.d-flex.flex-column.align-items-start');
     const activeLoadingBubble = systemBubbles[systemBubbles.length - 1];
 
@@ -123,7 +128,7 @@ chatForm.addEventListener('submit', function(event) {
         } else {
             responseHTML = escapeHTML(data.chat_response || "").replace(/\n/g, "<br>");
         }
-        // Live update the placeholder bubble content layout
+        // live update the placeholder bubble content layout
         activeLoadingBubble.querySelector('.bg-white').innerHTML = responseHTML;
         activeLoadingBubble.querySelector('.text-muted').textContent = `${modelName} • ${currentTime}`;
         scrollBox.scrollTop = scrollBox.scrollHeight;
