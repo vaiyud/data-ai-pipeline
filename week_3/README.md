@@ -33,12 +33,26 @@ I. Create a copy of the `.env.example` file at the root of the `week_3/` directo
 
 II. Make sure your `.env` file includes the following:
 
-	GOOGLE_API_KEY=<YOUR-GOOGLE-API-KEY-HERE>
-	BACKEND_URL=<YOUR-BACKEND-SERVER-URL-HERE>
-	DB_PATH=<YOUR-PATH-TO-JOB-DB-FROM-WEEK-2-HERE>
-	OLLAMA_HOST=<YOUR-OLLAMA-HOST-URL-HERE>
+    # path to the job database in the backend folder
+    DB_PATH=data/jobs.db # sample database path 
+
+    # url to the backend service
+    BACKEND_URL=http://backend:8000/chat # for automatic setup
+    # BACKEND_URL=http://127.0.0.1:8000/chat # for manual setup 
+
+    # to use gemini models (cloud)
+    GOOGLE_API_KEY=<your_google_api_key_here> # from Google AI Studio
+
+    # to use ollama models (local)
+    OLLAMA_HOST=http://host.docker.internal:11434 # for automatic setup
+    # OLLAMA_HOST=http://127.0.0.1:11434 # for manual setup
+
+    # update with your preferred mdoel (cloud/local)
+    MODEL_NAME=<YOUR-PREFERRED-AI-MODEL>
  
 > Warning: DO NOT commit your `.env` containing any `API_KEY` to the repository.
+
+> Make sure the `.env` file is inside your `week_3/` root next to your `docker-compose.yml`.
 
 III. Make sure your `.gitignore` file includes the following:
 
@@ -133,17 +147,6 @@ To setup the **frontend service**, open a new terminal:
 
 Then, open http://127.0.0.1:8001 inside your local web browser to begin interacting with the service!
 
---- 
-### Suggestions to configure the `.env` file: 
-To make sure you don't break the instructions listed above, make sure you create a file named `.env` inside your `week_3/` root next to your `docker-compose.yml` that looks precisely like this: 
-
-    GOOGLE_API_KEY=<your_google_api_key_here> # from Google AI Studio 
-    BACKEND_API_URL=http://backend:8000/chat # for Docker Compose
-    BACKEND_API_URL=http://127.0.0.1:8000/chat # for manual setup 
-    DB_PATH=data/jobs.db # sample database path 
-    OLLAMA_HOST=http://host.docker.internal:11434 # for Docker containers
-    OLLAMA_HOST=http://127.0.0.1:11434 # for manual setup
-
 ## Usage
 
 Once your services are up and running via Docker Compose or manual local servers, follow these steps to interact with the chat application.
@@ -166,8 +169,10 @@ To evaluate a resume against a target job market, follow this sequence:
     docker compose up
     ```
 2.  **Open the webpage:** Navigate to `http://localhost:8001` in your browser.
-3.  **Upload your file:**  Locate the upload button on the user interface and browse to select a file (e.g. `resume.txt`).
-5.  **Submit for analysis:** Click the **Send** button. The frontend will process the file stream and forward the payload to the backend service.
+3.  **Start chatting:** Type "hello" or anything to start using the chatbot.
+4.  **Upload your file:**  Locate the upload button on the user interface and browse to select a file (e.g. `resume.txt`, `resume.pdf`).
+5.  **Set intent:** After uploading the file, type what you want to do with the file (e.g. "summarize this resume", "find the skill gaps")
+6.  **Submit for analysis:** Click the **Send** button. The frontend will process the file stream and forward the payload to the backend service.
 
 ---
 
@@ -176,7 +181,7 @@ To evaluate a resume against a target job market, follow this sequence:
 To ensure everything is working correctly, verify your input profiles match these expected data shapes:
 
 #### Expected Inputs
-* **File Format:** A standard text-extracted resume profiles in `.txt`.
+* **File Format:** Standard text-extracted resume profiles in `.txt` or structural `.pdf` formats.
 * **Payload Example:** A profile containing technical skills (e.g. *Python, Docker, SQL*) and career history.
 
 #### Expected Outputs
@@ -206,18 +211,18 @@ This project uses a decoupled microservice architecture where the `frontend` con
 ### 2. Backend Endpoint Reference
 
 #### `POST /chat`
-Accepts a candidate's resume, saves it to a transient cache folder, reads the tracking metrics from the integrated SQLite database, evaluates inconsistencies, and deletes the transient asset.
+Accepts a candidate's message and pre-extracted resume text payload, evaluates target metrics from the integrated SQLite database, and returns the response.
 
-* **Content-Type:** `multipart/form-data`
+* **Content-Type:** `multipart/form-data` / `application/x-www-form-urlencoded`
 * **Request Payload Parameters:**
-  * `chat_file`: `UploadFile (Binary)` — **Required.** The target `.txt` text file containing resume metadata.
-  * `user_message`: `string` — *Optional.* Accompanying text instructions or manual string input.
+  * `user_message`: `string` — *Optional.* Accompanying text instructions or manual string input (e.g. "find skill gaps", "summarize my resume").
+  * `resume_text`: `string` — *Optional.* Pre-extracted text content from the candidate's uploaded file.
+  * `model_used`: `string` — *Optional.* The string identifier specifying the current active AI model.
 
-* **Expected Response (`200 OK`):**
-  ```json
-  {
-    "gaps": ["Docker", "Kubernetes", "Redis"]
-  }
+* **Expected Response Matrix (`200 OK`):**
+Depending on user intent, the backend responds with differentiated payloads:
+  - **For text chat/summaries:** `{"chat_response": "...", "model_used": "...", "type": "text"}`
+  - **For skill gaps extraction:** `{"gaps": ["...", "..."], "model_used": "...", "type": "gaps"}`
 * **Error Formats:**
     
     -   `400 Bad Request`: Triggered if the `chat_file` parameter or filename payload string is missing/empty.
@@ -273,13 +278,13 @@ The lifecycle of an evaluation request flows sequentially through the architectu
 
 1.  **Capture:** The user attaches a resume file and submits the form inside their web browser.
     
-2.  **Sanitize & Stage:** Client-side JavaScript sanitizes the textual nodes to block XSS, wraps the data inside a `FormData` object, and triggers an asynchronous `POST` to the frontend's `/submit-chat` gateway.
+2.  **Sanitize & Extract:** The frontend UI interceptor converts file uploads dynamically—extracting text using `pypdf` for PDF assets or decoding string buffers for raw `.txt` files.
     
-3.  **Relay:** The frontend intercepts the request, streams the structural data fields over an isolated Docker network bridge, and forwards them to the backend container endpoint (`/chat`).
+3.  **Relay:** Client-side JavaScript strips out cross-site scripting risks (XSS), packages the data inside a `FormData` bundle containing `user_message` and `resume_text`, and sends it to the frontend container (`/submit-chat`), which relays it across the Docker bridge network to the backend server.
     
-4.  **Process:** The backend generates a secure transient file clone (`temp_uploads/`), calls the underlying automated script parsing module (`find_skill_gaps`), executes a tracking comparison check against the SQLite engine dataset, and automatically purges the temporary asset directory.
+4.  **Process:** The backend identifies the operation routing payload type. If a skill gap intent is flagged, it saves the string data directly to a quick transient file (`temp_uploads/extracted_resume.txt`), executes local SQLite comparison operations using `find_skill_gaps`, and purges the temporary tracking asset immediately.
     
-5.  **Render:** The backend returns an array string containing the isolated delta metrics. The frontend relays this payload right back to the browser interface, and the DOM automatically mounts left-aligned system response bubbles onto the user viewport.
+5.  **Render:** The engine returns structured data fields. JavaScript parses the payload type discriminator—rendering plain text seamlessly or injecting styled bullet points on-the-fly inside the active loading placeholder without refreshing the page workspace.
 
 ## Testing
 
@@ -307,8 +312,6 @@ This system is a localized development prototype focused on validating dockerize
 
 ### 2. Processing & Performance Constraints
 * **Synchronous File Bottlenecks:** File ingestion reads the multi-part data stream synchronously. Processing massive plain text assets or handling multiple concurrent requests will block execution threads, occasionally triggering `504 ReadTimeout` network faults.
-
-* **Text-Only Ingestion:** The current parsing pipeline does not native-process binary document shapes like formatted PDFs or Word documents (`.docx`). Files must be pre-extracted or uploaded as raw plain-text templates (`.txt`).
 
 ### 3. Model Accuracy & Data Trade-offs
 * **Deterministic Matching:** The skill gap logic relies on direct token alignment against the local SQLite dataset. If a resume lists a valid synonym or alternative phrasing for a technology that isn't exact, the pipeline may flag it as an artificial missing gap.
