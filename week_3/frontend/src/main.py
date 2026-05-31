@@ -47,51 +47,53 @@ async def read_root(request: Request):
 async def handle_ui_submission(
     user_message: str = Form(""), chat_file: UploadFile = File(None)
 ):
-    if not chat_file:
+
+    if not user_message.strip() and not chat_file:
         return JSONResponse(
-            status_code=400, content={"error": "Please attach your resume file."}
+            status_code=400, content={"error": "Your message cannot be empty."}
         )
 
     # Read binary bytes from the frontend multi-part context stream
-    file_bytes = await chat_file.read()
     extracted_text = ""
 
     # if the file uploaded is PDF, convert to text
-    if (
-        chat_file.filename.lower().endswith(".pdf")
-        or chat_file.content_type == "application/pdf"
-    ):
-        try:
-            pdf_stream = io.BytesIO(file_bytes)
-            reader = PdfReader(pdf_stream)
+    if chat_file and chat_file.filename.strip():
+        file_bytes = await chat_file.read()
+        if (
+            chat_file.filename.lower().endswith(".pdf")
+            or chat_file.content_type == "application/pdf"
+        ):
+            try:
+                pdf_stream = io.BytesIO(file_bytes)
+                reader = PdfReader(pdf_stream)
 
-            text_pages = []
-            for page in reader.pages:
-                text = page.extract_text()
-                if text:
-                    text_pages.append(text)
+                text_pages = []
+                for page in reader.pages:
+                    text = page.extract_text()
+                    if text:
+                        text_pages.append(text)
 
-            extracted_text = "\n".join(text_pages)
+                extracted_text = "\n".join(text_pages)
 
-            if not extracted_text.strip():
+                if not extracted_text.strip():
+                    return JSONResponse(
+                        status_code=400,
+                        content={
+                            "error": "Could not extract text from PDF. Ensure it is not an image-only scanned file."
+                        },
+                    )
+            except Exception as e:
                 return JSONResponse(
-                    status_code=400,
+                    status_code=422,
                     content={
-                        "error": "Could not extract text from PDF. Ensure it is not an image-only scanned file."
+                        "error": f"Failed to parse PDF file structural layers: {str(e)}"
                     },
                 )
-        except Exception as e:
-            return JSONResponse(
-                status_code=422,
-                content={
-                    "error": f"Failed to parse PDF file structural layers: {str(e)}"
-                },
-            )
-    else:
-        try:
-            extracted_text = file_bytes.decode("utf-8")
-        except UnicodeDecodeError:
-            extracted_text = file_bytes.decode("latin-1")
+        else:
+            try:
+                extracted_text = file_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                extracted_text = file_bytes.decode("latin-1")
 
     # Bundle data fields explicitly for network serialization forwarding
     data = {
